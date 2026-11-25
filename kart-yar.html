@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="کارت‌یار خانواده" />
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <title>کارت‌یار خانواده | انتقال آنلاین و آنی</title>
+  <!-- بارگذاری Tailwind CSS برای ظاهر شیشه‌ای و واکنش‌گرا -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- بارگذاری کلاینت رسمی Supabase برای همگام‌سازی لحظه‌ای بین آیفون و اندروید -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" />
+
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at top right, #064e3b 0%, #020617 55%, #090d16 100%);
+      --glass-bg: rgba(15, 23, 42, 0.78);
+      --glass-border: rgba(52, 211, 153, 0.22);
+      --accent-primary: #10b981;
+      --text-primary: #f8fafc;
+    }
+
+    [data-theme="ocean"] {
+      --bg-gradient: radial-gradient(circle at top right, #1e3a8a 0%, #020617 55%, #090d16 100%);
+      --glass-bg: rgba(15, 23, 42, 0.8);
+      --glass-border: rgba(96, 165, 250, 0.25);
+      --accent-primary: #3b82f6;
+    }
+
+    [data-theme="violet"] {
+      --bg-gradient: radial-gradient(circle at top right, #4c1d95 0%, #090514 55%, #020617 100%);
+      --glass-bg: rgba(24, 16, 48, 0.82);
+      --glass-border: rgba(167, 139, 250, 0.25);
+      --accent-primary: #8b5cf6;
+    }
+
+    [data-theme="gold"] {
+      --bg-gradient: radial-gradient(circle at top right, #78350f 0%, #0c0a09 55%, #020617 100%);
+      --glass-bg: rgba(28, 25, 23, 0.85);
+      --glass-border: rgba(251, 191, 36, 0.25);
+      --accent-primary: #f59e0b;
+    }
+
+    [data-theme="light"] {
+      --bg-gradient: linear-gradient(135deg, #ecfdf5 0%, #f1f5f9 50%, #e0f2fe 100%);
+      --glass-bg: rgba(255, 255, 255, 0.92);
+      --glass-border: rgba(16, 185, 129, 0.28);
+      --accent-primary: #059669;
+      --text-primary: #0f172a;
+    }
+
+    * {
+      font-family: 'Vazirmatn', Tahoma, sans-serif;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      background: var(--bg-gradient);
+      background-attachment: fixed;
+      color: var(--text-primary);
+      min-height: 100vh;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+
+    .glass-panel {
+      background: var(--glass-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--glass-border);
+      box-shadow: 0 14px 36px rgba(0, 0, 0, 0.35);
+    }
+
+    [data-theme="light"] .text-white { color: #0f172a !important; }
+    [data-theme="light"] .text-slate-200,
+    [data-theme="light"] .text-slate-300 { color: #334155 !important; }
+    [data-theme="light"] .text-slate-400 { color: #64748b !important; }
+    [data-theme="light"] .bg-slate-900\/80,
+    [data-theme="light"] .bg-slate-950\/90,
+    [data-theme="light"] .bg-slate-950 { background-color: #f8fafc !important; color: #0f172a !important; }
+    [data-theme="light"] .bg-slate-800 { background-color: #e2e8f0 !important; color: #0f172a !important; }
+    [data-theme="light"] .keep-white,
+    [data-theme="light"] .keep-white * { color: #ffffff !important; }
+
+    .ltr-num {
+      direction: ltr;
+      unicode-bidi: isolate;
+    }
+
+    .toast-enter {
+      animation: slideUp 0.25s ease forwards;
+    }
+
+    @keyframes slideUp {
+      from { opacity: 0; transform: translate(-50%, 24px); }
+      to { opacity: 1; transform: translate(-50%, 0); }
+    }
+  </style>
+</head>
+<body class="antialiased selection:bg-emerald-500 selection:text-white">
+  <div id="toast-container" class="fixed bottom-6 left-1/2 -translate-x-1/2 z-50 pointer-events-none"></div>
+
+  <div class="max-w-lg mx-auto px-4 py-4 pb-20">
+    <!-- هدر برنامه -->
+    <header id="app-header" class="hidden glass-panel rounded-3xl p-4 mb-4 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <div class="w-11 h-11 rounded-2xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white text-xl font-black shadow-lg">
+          💳
+        </div>
+        <div>
+          <h1 class="text-base sm:text-lg font-black text-white leading-tight">کارت‌یار خانواده</h1>
+          <span id="current-role-badge" class="text-[11px] font-bold text-emerald-400">نقش انتخاب نشده</span>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button onclick="openSupabaseModal()" class="p-2.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600/60 text-xs font-bold text-emerald-300 flex items-center gap-1" title="تنظیمات Supabase">
+          <span>☁️</span>
+          <span class="hidden sm:inline">سرور</span>
+        </button>
+        <button onclick="toggleThemePanel()" class="p-2.5 rounded-2xl bg-slate-800/90 hover:bg-slate-700 border border-slate-600/60 text-sm" title="تغییر تم">
+          🎨
+        </button>
+      </div>
+    </header>
+
+    <!-- پنل تغییر تم -->
+    <div id="theme-picker-panel" class="hidden glass-panel rounded-2xl p-3.5 mb-4">
+      <div class="flex items-center justify-between">
+        <span class="text-xs font-bold text-slate-300">انتخاب تم ظاهری:</span>
+        <div class="flex items-center gap-2.5">
+          <button onclick="applyTheme('emerald')" class="w-7 h-7 rounded-full bg-emerald-500 border-2 border-white/60 shadow" title="زمردی"></button>
+          <button onclick="applyTheme('ocean')" class="w-7 h-7 rounded-full bg-blue-500 border-2 border-white/60 shadow" title="اقیانوسی"></button>
+          <button onclick="applyTheme('violet')" class="w-7 h-7 rounded-full bg-violet-500 border-2 border-white/60 shadow" title="بنفش"></button>
+          <button onclick="applyTheme('gold')" class="w-7 h-7 rounded-full bg-amber-500 border-2 border-white/60 shadow" title="طلایی"></button>
+          <button onclick="applyTheme('light')" class="w-7 h-7 rounded-full bg-slate-100 border-2 border-slate-400 shadow" title="روشن"></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- نوار وضعیت اتصال Supabase و کد خانواده -->
+    <div id="family-sync-bar" class="hidden glass-panel rounded-2xl p-3.5 mb-4 border border-emerald-500/30">
+      <div class="flex items-center justify-between gap-2">
+        <div class="flex items-center gap-2">
+          <span id="sync-status-dot" class="w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse"></span>
+          <span id="sync-status-text" class="text-xs font-bold text-slate-300">اتاق خانواده:</span>
+          <strong id="active-family-code-display" class="ltr-num text-xs sm:text-sm font-black text-emerald-400">family9094</strong>
+        </div>
+        <div class="flex items-center gap-1.5">
+          <button onclick="openFamilyCodeModal()" class="text-xs px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-600 font-bold text-slate-200">
+            کد اتاق
+          </button>
+          <button onclick="openSupabaseModal()" class="text-xs px-2.5 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 font-bold text-emerald-300">
+            تنظیم Supabase
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ۱. صفحه انتخاب نقش -->
+    <section id="role-selection-screen" class="min-h-[82vh] flex flex-col justify-center py-6">
+      <div class="text-center mb-8">
+        <div class="w-20 h-20 mx-auto mb-4 rounded-3xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-4xl shadow-2xl">
+          💳
+        </div>
+        <h2 class="text-2xl font-black text-white mb-2">کارت‌یار خانواده</h2>
+        <p class="text-sm text-slate-300 leading-relaxed max-w-xs mx-auto">
+          نقش این گوشی را انتخاب کنید تا اطلاعات کارت و واریزها بدون نیاز به پیامک و به صورت لحظه‌ای منتقل شود.
+        </p>
+      </div>
+
+      <div class="space-y-4">
+        <button onclick="selectRole('sender')" class="w-full rounded-3xl p-5 text-right glass-panel border-2 border-emerald-500/40 hover:border-emerald-400 flex items-center justify-between transition">
+          <div>
+            <div class="text-xl font-black text-white mb-1">📤 ارسال‌کننده</div>
+            <p class="text-xs sm:text-sm text-slate-300">انتخاب کارت، ثبت مبلغ و ارسال آنلاین و آنی به گوشی گیرنده</p>
+          </div>
+          <span class="text-emerald-400 text-2xl font-bold">←</span>
+        </button>
+
+        <button onclick="selectRole('receiver')" class="w-full rounded-3xl p-5 text-right glass-panel border-2 border-blue-500/40 hover:border-blue-400 flex items-center justify-between transition">
+          <div>
+            <div class="text-xl font-black text-white mb-1">📥 گیرنده</div>
+            <p class="text-xs sm:text-sm text-slate-300">دریافت خودکار و لحظه‌ای شماره کارت و مبلغ روی صفحه بدون پیامک</p>
+          </div>
+          <span class="text-blue-400 text-2xl font-bold">←</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- ۲. بخش ارسال‌کننده -->
+    <main id="sender-view" class="hidden space-y-5">
+      <!-- کارت‌های ذخیره‌شده -->
+      <div class="glass-panel rounded-3xl p-4 sm:p-5">
+        <div class="flex items-center justify-between mb-3.5">
+          <h3 class="font-extrabold text-sm sm:text-base text-white">۱. کارت‌های ذخیره‌شده</h3>
+          <button onclick="openAddCardModal()" class="px-3 py-1.5 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 text-xs font-extrabold">
+            + افزودن کارت
+          </button>
+        </div>
+        <div id="saved-cards-list" class="space-y-2.5"></div>
+      </div>
+
+      <!-- فرم ثبت و ارسال آنلاین -->
+      <div class="glass-panel rounded-3xl p-4 sm:p-5 space-y-4">
+        <h3 class="font-extrabold text-sm sm:text-base text-white">۲. مشخصات واریز و ارسال آنلاین</h3>
+
+        <div>
+          <div class="flex items-center justify-between mb-1">
+            <label class="text-xs text-slate-400">شماره کارت ۱۶ رقمی</label>
+            <span id="sender-detected-bank" class="text-xs font-extrabold text-emerald-400"></span>
+          </div>
+          <input type="tel" inputmode="numeric" id="sender-card-number" maxlength="19" placeholder="6037 - 9975 - ...."
+            oninput="handleSenderCardInput(this)"
+            class="ltr-num w-full bg-slate-950/90 border border-slate-700 focus:border-emerald-400 rounded-xl px-4 py-3 text-center text-lg font-black text-white outline-none tracking-wider" />
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">نام صاحب کارت</label>
+          <input type="text" id="sender-owner-name" placeholder="مثلاً: زهرا محمدی"
+            class="w-full bg-slate-950/90 border border-slate-700 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-sm font-bold text-white outline-none" />
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">مبلغ واریزی (به تومان)</label>
+          <input type="tel" inputmode="numeric" id="sender-amount" placeholder="مثلاً: 500,000"
+            oninput="handleAmountInput(this)"
+            class="ltr-num w-full bg-slate-950/90 border border-slate-700 focus:border-emerald-400 rounded-xl px-4 py-3 text-center text-lg font-black text-amber-300 outline-none" />
+          <div id="amount-in-words" class="text-xs font-bold text-emerald-400 mt-1.5 min-h-[18px]">مبلغ را وارد کنید (یا خالی بگذارید)</div>
+
+          <!-- دکمه‌های افزایش سریع مبلغ -->
+          <div class="grid grid-cols-4 gap-1.5 mt-2">
+            <button type="button" onclick="addQuickAmount(100000)" class="py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-[11px] font-bold text-slate-200">+۱۰۰ هزار</button>
+            <button type="button" onclick="addQuickAmount(500000)" class="py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-[11px] font-bold text-slate-200">+۵۰۰ هزار</button>
+            <button type="button" onclick="addQuickAmount(1000000)" class="py-1.5 rounded-lg bg-slate-800/90 hover:bg-slate-700 text-[11px] font-bold text-slate-200">+۱ میلیون</button>
+            <button type="button" onclick="clearAmount()" class="py-1.5 rounded-lg bg-rose-500/20 text-[11px] font-bold text-rose-300">پاک کردن</button>
+          </div>
+        </div>
+
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">بابت / توضیح کوتاه (اختیاری)</label>
+          <input type="text" id="sender-note" placeholder="مثلاً: خرید خانه"
+            class="w-full bg-slate-950/90 border border-slate-700 focus:border-emerald-400 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none" />
+        </div>
+
+        <div class="pt-2 space-y-2.5">
+          <button id="online-send-btn" onclick="sendOnlineInstant()" class="w-full py-4 px-5 rounded-2xl bg-gradient-to-l from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-base sm:text-lg shadow-lg flex items-center justify-center gap-2 transition">
+            <span>🚀</span>
+            <span>ارسال آنلاین و آنی به گیرنده</span>
+          </button>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <button onclick="copyFormattedFallback()" class="py-3 px-3 rounded-xl bg-slate-800 border border-slate-600 text-white font-bold text-xs sm:text-sm">📋 کپی متنی</button>
+            <button onclick="shareFormattedFallback()" class="py-3 px-3 rounded-xl bg-slate-800 border border-slate-600 text-white font-bold text-xs sm:text-sm">📤 اشتراک‌گذاری</button>
+          </div>
+        </div>
+      </div>
+    </main>
+
+    <!-- ۳. بخش گیرنده -->
+    <main id="receiver-view" class="hidden space-y-5">
+      <div id="receiver-active-card-container" class="glass-panel rounded-3xl p-4 sm:p-6 border-2 border-blue-500/30">
+        <div class="mb-4 p-3 rounded-2xl bg-amber-500/15 border border-amber-400/30 flex items-center justify-between gap-2">
+          <span class="text-xs sm:text-sm font-extrabold text-amber-300">🕒 زمان ارسال:</span>
+          <div class="text-left">
+            <span id="rx-sent-time" class="text-xs sm:text-sm font-black text-white block">در انتظار دریافت آنلاین...</span>
+            <span id="rx-relative-time" class="text-[11px] font-bold text-amber-300/90"></span>
+          </div>
+        </div>
+
+        <!-- کارت گرافیکی بانکی -->
+        <div id="rx-bank-visual-card" class="keep-white rounded-2xl p-5 bg-gradient-to-br from-emerald-600 to-teal-900 border border-white/20 shadow-2xl mb-4">
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2">
+              <span id="rx-bank-dot" class="w-3.5 h-3.5 rounded-full bg-emerald-300"></span>
+              <span id="rx-bank-name" class="text-sm font-black tracking-wide">بانک عضو شتاب</span>
+            </div>
+            <span class="text-xs font-bold opacity-80">شتاب</span>
+          </div>
+
+          <div id="rx-card-number" class="ltr-num text-center text-xl sm:text-2xl font-black tracking-widest py-3 my-1 bg-black/25 rounded-xl border border-white/15">
+            ---- ---- ---- ----
+          </div>
+
+          <div class="flex items-center justify-between mt-4 pt-2 border-t border-white/15 text-xs sm:text-sm">
+            <span class="opacity-80">به نام:</span>
+            <strong id="rx-owner-name" class="font-black text-base">---</strong>
+          </div>
+        </div>
+
+        <button onclick="copyReceiverCardNumber()" class="w-full py-4 px-5 rounded-2xl bg-gradient-to-l from-blue-500 to-indigo-600 hover:from-blue-400 hover:to-indigo-500 text-white font-black text-base shadow-lg mb-4 flex items-center justify-center gap-2">
+          <span>📋</span>
+          <span>کپی شماره کارت ۱۶ رقمی (بدون خطا)</span>
+        </button>
+
+        <!-- جزئیات مبلغ -->
+        <div class="rounded-2xl bg-slate-950/80 border border-slate-800 p-4 space-y-3 mb-4">
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400">مبلغ به تومان:</span>
+            <strong id="rx-amount-toman" class="text-lg font-black text-amber-300">---</strong>
+          </div>
+          <div class="flex items-center justify-between">
+            <span class="text-xs text-slate-400">معادل ریال:</span>
+            <strong id="rx-amount-rial" class="text-sm font-bold text-slate-200">---</strong>
+          </div>
+          <div class="pt-2 border-t border-slate-800">
+            <span class="text-[11px] text-slate-400 block mb-0.5">مبلغ به حروف:</span>
+            <span id="rx-amount-words" class="text-xs sm:text-sm font-extrabold text-emerald-400">---</span>
+          </div>
+          <div id="rx-note-wrapper" class="hidden pt-2 border-t border-slate-800 flex items-center justify-between">
+            <span class="text-xs text-slate-400">بابت:</span>
+            <span id="rx-note-text" class="text-xs sm:text-sm font-bold text-white">---</span>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 mb-3">
+          <button onclick="copyReceiverAmount('toman')" class="py-3 px-3 rounded-xl bg-slate-800 border border-slate-600 text-white font-bold text-xs">کپی مبلغ (تومان)</button>
+          <button onclick="copyReceiverAmount('rial')" class="py-3 px-3 rounded-xl bg-slate-800 border border-slate-600 text-white font-bold text-xs">کپی مبلغ (ریال)</button>
+        </div>
+
+        <button onclick="confirmPaymentDone()" class="w-full py-3.5 px-4 rounded-2xl bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 text-emerald-300 font-extrabold text-sm sm:text-base">
+          ✅ واریز انجام شد (اطلاع‌رسانی آنی به فرستنده)
+        </button>
+      </div>
+    </main>
+
+    <!-- ۴. تاریخچه زنده -->
+    <section id="history-section" class="hidden mt-6 glass-panel rounded-3xl p-4 sm:p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-base text-white">🕒 تاریخچه آنلاین ارسال‌ها و واریزها</h3>
+        <span class="text-[11px] text-emerald-400 font-bold">همگام‌سازی زنده</span>
+      </div>
+      <div id="history-list" class="space-y-3"></div>
+    </section>
+
+    <!-- ۵. فوتر امن تغییر نقش -->
+    <footer id="safe-role-footer" class="hidden mt-8 text-center">
+      <button id="role-reset-trigger" onclick="requestRoleChange()" class="px-4 py-2 rounded-xl border border-dashed border-slate-600 text-xs text-slate-400 hover:text-white">
+        تغییر نقش این گوشی (ارسال‌کننده / گیرنده)
+      </button>
+      <div id="role-reset-confirm" class="hidden glass-panel rounded-2xl p-3.5 max-w-xs mx-auto space-y-2.5">
+        <p class="text-xs text-slate-200 font-bold">آیا مطمئنید می‌خواهید نقش این دستگاه را تغییر دهید؟</p>
+        <div class="grid grid-cols-2 gap-2">
+          <button onclick="confirmRoleChange()" class="py-2 rounded-xl bg-rose-500 text-white text-xs font-bold">بله، تغییر نقش</button>
+          <button onclick="cancelRoleChange()" class="py-2 rounded-xl bg-slate-700 text-white text-xs font-bold">انصراف</button>
+        </div>
+      </div>
+    </footer>
+  </div>
+
+  <!-- مودال تنظیمات Supabase (URL و Anon Key) -->
+  <div id="supabase-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl w-full max-w-md p-5 border border-emerald-500/40 max-h-[90vh] overflow-y-auto">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-black text-lg text-white">☁️ اتصال به پایگاه‌داده Supabase</h3>
+        <button onclick="closeSupabaseModal()" class="p-1.5 rounded-lg bg-slate-800 text-slate-400">✕</button>
+      </div>
+      <p class="text-xs text-slate-300 leading-relaxed mb-3">
+        اطلاعات پروژه خود را از بخش <strong>Project Settings → API</strong> در پنل Supabase کپی و وارد کنید (فقط یک‌بار روی هر گوشی):
+      </p>
+      <div class="space-y-3">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Project URL</label>
+          <input type="url" id="sb-url-input" placeholder="https://xxxx.supabase.co"
+            class="ltr-num w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs font-bold text-emerald-300 outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">Anon / Public API Key</label>
+          <textarea id="sb-key-input" rows="3" placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6..."
+            class="ltr-num w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-xs text-slate-200 outline-none"></textarea>
+        </div>
+        <button onclick="saveSupabaseConfig()" class="w-full py-3.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-sm">
+          ذخیره و اتصال آنلاین ✅
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال تنظیم کد اتاق خانواده -->
+  <div id="family-code-modal" class="fixed inset-0 z-50 hidden bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl w-full max-w-md p-5 border border-emerald-500/40">
+      <div class="flex items-center justify-between mb-3">
+        <h3 class="font-black text-lg text-white">🔗 کد اتصال دو گوشی</h3>
+        <button onclick="closeFamilyCodeModal()" class="p-1.5 rounded-lg bg-slate-800 text-slate-400">✕</button>
+      </div>
+      <p class="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
+        یک کد دلخواه وارد کنید و <strong>روی هر دو گوشی دقیقاً همین کد را بگذارید</strong> تا فقط پیام‌های خودتان را ببینید:
+      </p>
+      <div class="space-y-3.5">
+        <input type="text" id="family-code-input" placeholder="مثلاً: family9094"
+          class="ltr-num w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center text-lg font-black text-emerald-300 outline-none" />
+        <button onclick="saveFamilyCode()" class="w-full py-3.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-sm">
+          ذخیره کد اتاق خانواده
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- مودال افزودن کارت جدید -->
+  <div id="add-card-modal" class="fixed inset-0 z-50 hidden bg-black/75 backdrop-blur-sm flex items-center justify-center p-4">
+    <div class="glass-panel rounded-3xl w-full max-w-md p-5 border border-emerald-500/30">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-black text-lg text-white">➕ افزودن کارت بانکی</h3>
+        <button onclick="closeAddCardModal()" class="p-1.5 rounded-lg bg-slate-800 text-slate-400">✕</button>
+      </div>
+      <div class="space-y-3.5">
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">عنوان کارت (مثلاً: کارت سپه خودم)</label>
+          <input type="text" id="modal-card-title" placeholder="کارت اصلی" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none" />
+        </div>
+        <div>
+          <label class="block text-xs text-slate-400 mb-1">نام صاحب کارت</label>
+          <input type="text" id="modal-card-owner" placeholder="نام و نام خانوادگی" class="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white outline-none" />
+        </div>
+        <div>
+          <div class="flex justify-between mb-1">
+            <label class="text-xs text-slate-400">شماره کارت ۱۶ رقمی</label>
+            <span id="modal-detected-bank" class="text-xs font-bold text-emerald-400"></span>
+          </div>
+          <input type="tel" inputmode="numeric" id="modal-card-number" maxlength="19" placeholder="6037 - 9975 - ...."
+            oninput="handleModalCardInput(this)"
+            class="ltr-num w-full bg-slate-950 border border-slate-700 rounded-xl px-4 py-3 text-center text-base font-black text-white outline-none" />
+        </div>
+        <button onclick="saveNewCard()" class="w-full py-3.5 rounded-xl bg-emerald-500 text-slate-950 font-black text-sm">
+          ذخیره کارت
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* =====================================================================
+       تنظیمات پیش‌فرض Supabase (می‌توانید مستقیم اینجا یا از داخل برنامه وارد کنید)
+       ===================================================================== */
+    const DEFAULT_SUPABASE_URL = "https://vspuqblyixchmjahzfka.supabase.co";
+    const DEFAULT_SUPABASE_ANON_KEY = "sb_publishable_E6XIGzQnQYv2Wk4XN3rjmA_vceDzf_q";
+
+    let supabaseClient = null;
+    let realtimeChannel = null;
+
+    const IRAN_BANKS = [
+      { prefix: '603799', name: 'بانک ملی ایران', color: 'from-amber-600 to-yellow-900', dot: 'bg-amber-300' },
+      { prefix: '589210', name: 'بانک سپه', color: 'from-amber-700 to-stone-900', dot: 'bg-amber-400' },
+      { prefix: '603769', name: 'بانک صادرات ایران', color: 'from-blue-600 to-indigo-950', dot: 'bg-blue-300' },
+      { prefix: '610433', name: 'بانک ملت', color: 'from-rose-600 to-red-950', dot: 'bg-rose-300' },
+      { prefix: '585983', name: 'بانک تجارت', color: 'from-indigo-600 to-slate-900', dot: 'bg-indigo-300' },
+      { prefix: '621986', name: 'بانک سامان', color: 'from-sky-500 to-blue-900', dot: 'bg-sky-300' },
+      { prefix: '502229', name: 'بانک پاسارگاد', color: 'from-yellow-600 to-neutral-900', dot: 'bg-yellow-300' },
+      { prefix: '622106', name: 'بانک پارسیان', color: 'from-amber-600 to-red-950', dot: 'bg-amber-300' },
+      { prefix: '603770', name: 'بانک کشاورزی', color: 'from-emerald-600 to-green-950', dot: 'bg-emerald-300' },
+      { prefix: '628023', name: 'بانک مسکن', color: 'from-orange-600 to-stone-900', dot: 'bg-orange-300' },
+      { prefix: '589463', name: 'بانک رفاه کارگران', color: 'from-purple-600 to-slate-900', dot: 'bg-purple-300' },
+      { prefix: '606373', name: 'بانک مهر ایران', color: 'from-teal-500 to-emerald-950', dot: 'bg-teal-300' },
+      { prefix: '504172', name: 'بانک رسالت', color: 'from-cyan-600 to-blue-950', dot: 'bg-cyan-300' },
+      { prefix: '636214', name: 'بانک آینده', color: 'from-amber-700 to-neutral-950', dot: 'bg-amber-400' },
+      { prefix: '502806', name: 'بانک شهر', color: 'from-red-600 to-slate-950', dot: 'bg-red-300' },
+      { prefix: '627412', name: 'بانک اقتصاد نوین', color: 'from-violet-600 to-indigo-950', dot: 'bg-violet-300' },
+      { prefix: '639346', name: 'بانک سینا', color: 'from-sky-600 to-slate-900', dot: 'bg-sky-300' },
+      { prefix: '627760', name: 'پست بانک ایران', color: 'from-green-600 to-emerald-950', dot: 'bg-green-300' }
+    ];
+
+    const STORAGE_KEYS = {
+      ROLE: 'kartyar_role_v2',
+      THEME: 'kartyar_theme_v2',
+      CARDS: 'kartyar_saved_cards_v2',
+      HISTORY: 'kartyar_history_v2',
+      ACTIVE_RX: 'kartyar_active_rx_v2',
+      ROOM: 'kartyar_family_code_v2',
+      SB_URL: 'kartyar_sb_url',
+      SB_KEY: 'kartyar_sb_key'
+    };
+
+    const DEFAULT_CARDS = [
+      { id: 'c1', title: 'کارت اصلی', owner: 'زهرا محمدی', number: '5892101122334455' },
+      { id: 'c2', title: 'کارت خرید خانه', owner: 'زهرا محمدی', number: '6037997511223344' }
+    ];
+
+    let appState = {
+      role: localStorage.getItem(STORAGE_KEYS.ROLE) || null,
+      cards: JSON.parse(localStorage.getItem(STORAGE_KEYS.CARDS) || 'null') || DEFAULT_CARDS,
+      history: JSON.parse(localStorage.getItem(STORAGE_KEYS.HISTORY) || '[]'),
+      activeRx: JSON.parse(localStorage.getItem(STORAGE_KEYS.ACTIVE_RX) || 'null')
+    };
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEYS.CARDS, JSON.stringify(appState.cards));
+      localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(appState.history));
+      if (appState.role) localStorage.setItem(STORAGE_KEYS.ROLE, appState.role);
+      if (appState.activeRx) localStorage.setItem(STORAGE_KEYS.ACTIVE_RX, JSON.stringify(appState.activeRx));
+    }
+
+    /* --- توابع کمکی --- */
+    function toEnglishDigits(str) {
+      return String(str || '')
+        .replace(/[۰-۹]/g, d => '۰۱۲۳۴۵۶۷۸۹'.indexOf(d))
+        .replace(/[٠-٩]/g, d => '٠١٢٣٤٥٦٧٨٩'.indexOf(d));
+    }
+
+    function toPersianDigits(str) {
+      return String(str || '').replace(/\d/g, d => '۰۱۲۳۴۵۶۷۸۹'[d]);
+    }
+
+    function formatCardNumber(val) {
+      const digits = toEnglishDigits(val).replace(/\D/g, '').slice(0, 16);
+      return digits.replace(/(\d{4})(?=\d)/g, '$1 - ');
+    }
+
+    function formatCardSpaced(val) {
+      const digits = toEnglishDigits(val).replace(/\D/g, '').slice(0, 16);
+      return digits.replace(/(\d{4})(?=\d)/g, '$1  ');
+    }
+
+    function formatNumberWithCommas(numStr) {
+      const clean = toEnglishDigits(numStr).replace(/\D/g, '');
+      if (!clean) return '';
+      return Number(clean).toLocaleString('en-US');
+    }
+
+    function detectBank(cardVal) {
+      const clean = toEnglishDigits(cardVal).replace(/\D/g, '');
+      if (clean.length >= 6) {
+        const found = IRAN_BANKS.find(b => clean.startsWith(b.prefix));
+        if (found) return found;
+      }
+      return { name: 'بانک عضو شتاب', color: 'from-emerald-600 to-teal-900', dot: 'bg-emerald-300' };
+    }
+
+    function numberToPersianWords(numStr) {
+      let num = parseInt(toEnglishDigits(numStr).replace(/\D/g, ''), 10);
+      if (!num || isNaN(num)) return '';
+      const yekan = ['', 'یک', 'دو', 'سه', 'چهار', 'پنج', 'شش', 'هفت', 'هشت', 'نه'];
+      const dahgan = ['', '', 'بیست', 'سی', 'چهل', 'پنجاه', 'شصت', 'هفتاد', 'هشتاد', 'نود'];
+      const dahTaBist = ['ده', 'یازده', 'دوازده', 'سیزده', 'چهارده', 'پانزده', 'شانزده', 'هفده', 'هجده', 'نوزده'];
+      const sadgan = ['', 'یکصد', 'دویست', 'سیصد', 'چهارصد', 'پانصد', 'ششصد', 'هفتصد', 'هشتصد', 'نهصد'];
+      const scale = ['', 'هزار', 'میلیون', 'میلیارد'];
+      function threeDigits(n) {
+        const parts = [], s = Math.floor(n / 100), d = Math.floor((n % 100) / 10), y = n % 10;
+        if (s > 0) parts.push(sadgan[s]);
+        if (d === 1) parts.push(dahTaBist[y]);
+        else { if (d > 1) parts.push(dahgan[d]); if (y > 0) parts.push(yekan[y]); }
+        return parts.join(' و ');
+      }
+      const chunks = [];
+      let i = 0;
+      while (num > 0) {
+        const rem = num % 1000;
+        if (rem > 0) {
+          let t = threeDigits(rem);
+          if (scale[i]) t += ' ' + scale[i];
+          chunks.unshift(t);
+        }
+        num = Math.floor(num / 1000);
+        i++;
+      }
+      return chunks.join(' و ') + ' تومان';
+    }
+
+    function getExactPersianDateTime(dateObj) {
+      try {
+        const dateStr = new Intl.DateTimeFormat('fa-IR-u-ca-persian', { year: 'numeric', month: '2-digit', day: '2-digit' }).format(dateObj);
+        const timeStr = new Intl.DateTimeFormat('fa-IR', { hour: '2-digit', minute: '2-digit', hour12: false }).format(dateObj);
+        return { full: `${dateStr} - ساعت ${timeStr}`, iso: dateObj.toISOString() };
+      } catch (e) {
+        return { full: dateObj.toLocaleString('fa-IR'), iso: dateObj.toISOString() };
+      }
+    }
+
+    function getRelativeTimePersian(isoStr) {
+      if (!isoStr) return '';
+      const diffSec = Math.floor((Date.now() - new Date(isoStr).getTime()) / 1000);
+      if (isNaN(diffSec) || diffSec < 0) return '';
+      if (diffSec < 60) return 'هم‌اکنون';
+      const diffMin = Math.floor(diffSec / 60);
+      if (diffMin < 60) return `${toPersianDigits(diffMin)} دقیقه پیش`;
+      const diffHour = Math.floor(diffMin / 60);
+      if (diffHour < 24) return `${toPersianDigits(diffHour)} ساعت پیش`;
+      return `${toPersianDigits(Math.floor(diffHour / 24))} روز پیش`;
+    }
+
+    function showToast(msg, type = 'success') {
+      const container = document.getElementById('toast-container');
+      const bg = type === 'error' ? 'bg-rose-600' : type === 'info' ? 'bg-slate-800 border border-slate-600' : 'bg-emerald-600';
+      container.innerHTML = `<div class="toast-enter ${bg} text-white px-5 py-3 rounded-2xl text-xs sm:text-sm font-extrabold shadow-2xl whitespace-nowrap">${msg}</div>`;
+      setTimeout(() => { container.innerHTML = ''; }, 2600);
+    }
+
+    async function copyTextSafe(text) {
+      try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+          await navigator.clipboard.writeText(text);
+          return true;
+        }
+      } catch (e) {}
+      const ta = document.createElement('textarea');
+      ta.value = text;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      return true;
+    }
+
+    /* =====================================================================
+       اتصال و همگام‌سازی لحظه‌ای با Supabase
+       ===================================================================== */
+    function getSanitizedFamilyCode() {
+      const raw = localStorage.getItem(STORAGE_KEYS.ROOM) || 'family9094';
+      return raw.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '') || 'family9094';
+    }
+
+    function updateSyncStatus(state, label) {
+      const dot = document.getElementById('sync-status-dot');
+      const txt = document.getElementById('sync-status-text');
+      if (!dot || !txt) return;
+      if (state === 'connected') {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-[0_0_8px_#34d399]';
+        txt.textContent = label || 'متصل (آنلاین):';
+      } else if (state === 'error') {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-rose-500';
+        txt.textContent = label || 'قطع ارتباط:';
+      } else {
+        dot.className = 'w-2.5 h-2.5 rounded-full bg-amber-400 animate-pulse';
+        txt.textContent = label || 'در انتظار تنظیم Supabase:';
+      }
+    }
+
+    async function initSupabaseSync() {
+      const url = (localStorage.getItem(STORAGE_KEYS.SB_URL) || DEFAULT_SUPABASE_URL).trim();
+      const key = (localStorage.getItem(STORAGE_KEYS.SB_KEY) || DEFAULT_SUPABASE_ANON_KEY).trim();
+
+      if (!url || !key || !window.supabase) {
+        updateSyncStatus('pending', 'نیاز به تنظیم Supabase:');
+        return;
+      }
+
+      try {
+        supabaseClient = window.supabase.createClient(url, key);
+        await fetchRoomTransactions();
+        subscribeRoomRealtime();
+        updateSyncStatus('connected', 'آنلاین (زنده):');
+      } catch (err) {
+        console.error('Supabase init error:', err);
+        updateSyncStatus('error', 'خطا در اتصال:');
+      }
+    }
+
+    async function fetchRoomTransactions() {
+      if (!supabaseClient) return;
+      const roomCode = getSanitizedFamilyCode();
+      document.getElementById('active-family-code-display').textContent = roomCode;
+
+      const { data, error } = await supabaseClient
+        .from('kartyar_transactions')
+        .select('*')
+        .eq('room_code', roomCode)
+        .order('created_at', { ascending: false })
+        .limit(20);
+
+      if (error) {
+        console.error('Fetch error:', error);
+        updateSyncStatus('error', 'خطای جدول Supabase:');
+        return;
+      }
+
+      if (data) {
+        appState.history = data.map(row => ({
+          id: row.id,
+          c: row.card_number,
+          o: row.owner_name,
+          b: row.bank_name,
+          a: row.amount,
+          n: row.note,
+          t: row.sent_time,
+          iso: row.created_at,
+          status: row.status
+        }));
+        saveState();
+
+        if (appState.history.length > 0) {
+          appState.activeRx = appState.history[0];
+          if (appState.role === 'receiver') renderActiveReceiverCard();
+        }
+        renderHistory();
+      }
+    }
+
+    function subscribeRoomRealtime() {
+      if (!supabaseClient) return;
+      if (realtimeChannel) {
+        supabaseClient.removeChannel(realtimeChannel);
+      }
+      const roomCode = getSanitizedFamilyCode();
+
+      realtimeChannel = supabaseClient
+        .channel(`room_${roomCode}`)
+        .on(
+          'postgres_changes',
+          { event: '*', schema: 'public', table: 'kartyar_transactions', filter: `room_code=eq.${roomCode}` },
+          async (payload) => {
+            await fetchRoomTransactions();
+            if (payload.eventType === 'INSERT' && appState.role === 'receiver') {
+              showToast('💳 اطلاعات واریز جدید به صورت آنلاین دریافت شد!', 'success');
+            } else if (payload.eventType === 'UPDATE' && payload.new?.status === 'paid' && appState.role === 'sender') {
+              showToast('✅ گیرنده واریز را انجام و تایید کرد!', 'success');
+            }
+          }
+        )
+        .subscribe((status) => {
+          if (status === 'SUBSCRIBED') updateSyncStatus('connected', 'آنلاین (زنده):');
+        });
+    }
+
+    async function sendOnlineInstant() {
+      const rawCard = toEnglishDigits(document.getElementById('sender-card-number').value).replace(/\D/g, '');
+      const owner = document.getElementById('sender-owner-name').value.trim() || 'نامشخص';
+      const amountClean = toEnglishDigits(document.getElementById('sender-amount').value).replace(/\D/g, '');
+      const note = document.getElementById('sender-note').value.trim();
+
+      if (rawCard.length !== 16) {
+        showToast('شماره کارت باید ۱۶ رقم باشد!', 'error');
+        return;
+      }
+
+      if (!supabaseClient) {
+        openSupabaseModal();
+        showToast('ابتدا اطلاعات Supabase را وارد کنید', 'info');
+        return;
+      }
+
+      const btn = document.getElementById('online-send-btn');
+      btn.disabled = true;
+      btn.style.opacity = '0.7';
+
+      try {
+        const bank = detectBank(rawCard);
+        const persianTime = getExactPersianDateTime(new Date());
+        const roomCode = getSanitizedFamilyCode();
+
+        const { error } = await supabaseClient
+          .from('kartyar_transactions')
+          .insert([{
+            room_code: roomCode,
+            card_number: rawCard,
+            owner_name: owner,
+            bank_name: bank.name,
+            amount: amountClean || '0',
+            note: note,
+            sent_time: persianTime.full,
+            status: 'pending'
+          }]);
+
+        if (error) throw error;
+
+        await fetchRoomTransactions();
+        showToast('🚀 درجا به گوشی گیرنده ارسال شد!', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('خطا در ارسال! جدول Supabase را بررسی کنید', 'error');
+      } finally {
+        btn.disabled = false;
+        btn.style.opacity = '1';
+      }
+    }
+
+    async function confirmPaymentDone() {
+      if (!appState.activeRx || !appState.activeRx.id || !supabaseClient) return;
+      try {
+        const { error } = await supabaseClient
+          .from('kartyar_transactions')
+          .update({ status: 'paid' })
+          .eq('id', appState.activeRx.id);
+
+        if (error) throw error;
+        await fetchRoomTransactions();
+        showToast('✅ تایید واریز برای فرستنده ثبت شد!', 'success');
+      } catch (err) {
+        console.error(err);
+        showToast('خطا در ثبت تایید واریز', 'error');
+      }
+    }
+
+    /* --- مودال‌های Supabase و اتاق خانواده --- */
+    function openSupabaseModal() {
+      document.getElementById('sb-url-input').value = localStorage.getItem(STORAGE_KEYS.SB_URL) || DEFAULT_SUPABASE_URL;
+      document.getElementById('sb-key-input').value = localStorage.getItem(STORAGE_KEYS.SB_KEY) || DEFAULT_SUPABASE_ANON_KEY;
+      document.getElementById('supabase-modal').classList.remove('hidden');
+    }
+
+    function closeSupabaseModal() {
+      document.getElementById('supabase-modal').classList.add('hidden');
+    }
+
+    async function saveSupabaseConfig() {
+      const url = document.getElementById('sb-url-input').value.trim();
+      const key = document.getElementById('sb-key-input').value.trim();
+      if (!url.startsWith('https://') || key.length < 20) {
+        showToast('لطفاً Project URL و Anon Key معتبر وارد کنید', 'error');
+        return;
+      }
+      localStorage.setItem(STORAGE_KEYS.SB_URL, url);
+      localStorage.setItem(STORAGE_KEYS.SB_KEY, key);
+      closeSupabaseModal();
+      await initSupabaseSync();
+      showToast('تنظیمات Supabase ذخیره شد ✅', 'success');
+    }
+
+    function openFamilyCodeModal() {
+      document.getElementById('family-code-input').value = getSanitizedFamilyCode();
+      document.getElementById('family-code-modal').classList.remove('hidden');
+    }
+
+    function closeFamilyCodeModal() {
+      document.getElementById('family-code-modal').classList.add('hidden');
+    }
+
+    async function saveFamilyCode() {
+      const val = document.getElementById('family-code-input').value.trim().toLowerCase().replace(/[^a-z0-9_-]/g, '');
+      if (val.length < 3) {
+        showToast('کد اتاق باید حداقل ۳ کاراکتر انگلیسی باشد', 'error');
+        return;
+      }
+      localStorage.setItem(STORAGE_KEYS.ROOM, val);
+      closeFamilyCodeModal();
+      document.getElementById('active-family-code-display').textContent = val;
+      if (supabaseClient) {
+        await fetchRoomTransactions();
+        subscribeRoomRealtime();
+      }
+      showToast(`متصل به کد اتاق: ${val} ✅`, 'success');
+    }
+
+    /* --- مدیریت تم و نقش --- */
+    function applyTheme(themeId, silent = false) {
+      const valid = ['emerald', 'ocean', 'violet', 'gold', 'light'];
+      const chosen = valid.includes(themeId) ? themeId : 'emerald';
+      if (chosen === 'emerald') document.documentElement.removeAttribute('data-theme');
+      else document.documentElement.setAttribute('data-theme', chosen);
+      localStorage.setItem(STORAGE_KEYS.THEME, chosen);
+      if (!silent) showToast('تم تغییر کرد 🎨', 'info');
+    }
+
+    function toggleThemePanel() { document.getElementById('theme-picker-panel').classList.toggle('hidden'); }
+    function selectRole(role) { appState.role = role; localStorage.setItem(STORAGE_KEYS.ROLE, role); cancelRoleChange(); renderView(); }
+    function showRoleSelection() {
+      ['app-header', 'theme-picker-panel', 'family-sync-bar', 'sender-view', 'receiver-view', 'history-section', 'safe-role-footer'].forEach(id => document.getElementById(id).classList.add('hidden'));
+      document.getElementById('role-selection-screen').classList.remove('hidden');
+    }
+    function requestRoleChange() { document.getElementById('role-reset-trigger').classList.add('hidden'); document.getElementById('role-reset-confirm').classList.remove('hidden'); }
+    function cancelRoleChange() { document.getElementById('role-reset-trigger').classList.remove('hidden'); document.getElementById('role-reset-confirm').classList.add('hidden'); }
+    function confirmRoleChange() { cancelRoleChange(); showRoleSelection(); }
+
+    function renderView() {
+      if (!appState.role) { showRoleSelection(); return; }
+      document.getElementById('role-selection-screen').classList.add('hidden');
+      document.getElementById('app-header').classList.remove('hidden');
+      document.getElementById('family-sync-bar').classList.remove('hidden');
+      document.getElementById('history-section').classList.remove('hidden');
+      document.getElementById('safe-role-footer').classList.remove('hidden');
+      document.getElementById('active-family-code-display').textContent = getSanitizedFamilyCode();
+
+      const badge = document.getElementById('current-role-badge');
+      if (appState.role === 'sender') {
+        document.getElementById('sender-view').classList.remove('hidden');
+        document.getElementById('receiver-view').classList.add('hidden');
+        badge.textContent = '📤 نقش فعلی: ارسال‌کننده';
+        renderSavedCards();
+      } else {
+        document.getElementById('sender-view').classList.add('hidden');
+        document.getElementById('receiver-view').classList.remove('hidden');
+        badge.textContent = '📥 نقش فعلی: گیرنده';
+        renderActiveReceiverCard();
+      }
+      renderHistory();
+    }
+
+    /* --- مدیریت کارت‌های ذخیره‌شده و فرم ارسال‌کننده --- */
+    function renderSavedCards() {
+      const container = document.getElementById('saved-cards-list');
+      if (!appState.cards || appState.cards.length === 0) {
+        container.innerHTML = `<p class="text-xs text-slate-400 text-center py-3">هنوز کارتی ذخیره نکرده‌اید.</p>`;
+        return;
+      }
+      container.innerHTML = '';
+      appState.cards.forEach(card => {
+        const bank = detectBank(card.number);
+        const row = document.createElement('div');
+        row.className = 'p-3.5 rounded-2xl bg-slate-900/80 border border-slate-700/80 hover:border-emerald-400/50 flex items-center justify-between cursor-pointer transition';
+        row.onclick = () => fillSenderFormWithCard(card);
+        row.innerHTML = `
+          <div>
+            <div class="text-sm font-extrabold text-white mb-0.5">${card.title} <span class="text-[11px] font-bold text-emerald-400">(${bank.name})</span></div>
+            <div class="ltr-num text-xs font-bold text-slate-300">${toPersianDigits(formatCardNumber(card.number))}</div>
+          </div>
+          <button type="button" onclick="event.stopPropagation(); deleteSavedCard('${card.id}')" class="px-2.5 py-1.5 rounded-xl bg-rose-500/15 text-rose-400 text-xs font-bold">حذف</button>
+        `;
+        container.appendChild(row);
+      });
+    }
+
+    function fillSenderFormWithCard(card) {
+      const cardInput = document.getElementById('sender-card-number');
+      cardInput.value = formatCardNumber(card.number);
+      document.getElementById('sender-owner-name').value = card.owner;
+      handleSenderCardInput(cardInput);
+      showToast(`کارت «${card.title}» انتخاب شد`, 'info');
+    }
+
+    function handleSenderCardInput(input) {
+      input.value = formatCardNumber(input.value);
+      const bank = detectBank(input.value);
+      document.getElementById('sender-detected-bank').textContent = input.value.replace(/\D/g, '').length >= 6 ? bank.name : '';
+    }
+
+    function handleAmountInput(input) {
+      const clean = toEnglishDigits(input.value).replace(/\D/g, '');
+      input.value = formatNumberWithCommas(clean);
+      document.getElementById('amount-in-words').textContent = (!clean || parseInt(clean, 10) === 0) ? 'مبلغ را وارد کنید (یا خالی بگذارید)' : numberToPersianWords(clean);
+    }
+
+    function addQuickAmount(val) {
+      const input = document.getElementById('sender-amount');
+      const next = (parseInt(toEnglishDigits(input.value).replace(/\D/g, '') || '0', 10)) + val;
+      input.value = formatNumberWithCommas(next.toString());
+      handleAmountInput(input);
+    }
+
+    function clearAmount() {
+      const input = document.getElementById('sender-amount');
+      input.value = '';
+      handleAmountInput(input);
+    }
+
+    function openAddCardModal() { document.getElementById('add-card-modal').classList.remove('hidden'); }
+    function closeAddCardModal() { document.getElementById('add-card-modal').classList.add('hidden'); }
+    function handleModalCardInput(input) {
+      input.value = formatCardNumber(input.value);
+      document.getElementById('modal-detected-bank').textContent = input.value.replace(/\D/g, '').length >= 6 ? detectBank(input.value).name : '';
+    }
+
+    function saveNewCard() {
+      const title = document.getElementById('modal-card-title').value.trim();
+      const owner = document.getElementById('modal-card-owner').value.trim();
+      const number = toEnglishDigits(document.getElementById('modal-card-number').value).replace(/\D/g, '');
+      if (number.length !== 16) { showToast('شماره کارت ۱۶ رقمی وارد کنید', 'error'); return; }
+      const newCard = { id: 'c_' + Date.now(), title: title || detectBank(number).name, owner: owner || 'بدون نام', number };
+      appState.cards.unshift(newCard);
+      saveState();
+      renderSavedCards();
+      fillSenderFormWithCard(newCard);
+      closeAddCardModal();
+      showToast('کارت ذخیره شد ✅');
+    }
+
+    function deleteSavedCard(id) {
+      appState.cards = appState.cards.filter(c => c.id !== id);
+      saveState();
+      renderSavedCards();
+    }
+
+    function buildFormattedTextOnly() {
+      const rawCard = toEnglishDigits(document.getElementById('sender-card-number').value).replace(/\D/g, '');
+      const owner = document.getElementById('sender-owner-name').value.trim() || 'نامشخص';
+      const amountClean = toEnglishDigits(document.getElementById('sender-amount').value).replace(/\D/g, '');
+      const note = document.getElementById('sender-note').value.trim();
+      if (rawCard.length !== 16) { showToast('شماره کارت باید ۱۶ رقم باشد!', 'error'); return null; }
+      const bank = detectBank(rawCard);
+      const lines = [`💳 ${formatCardNumber(rawCard)}`, `👤 ${owner} (${bank.name})`];
+      if (amountClean && parseInt(amountClean, 10) > 0) lines.push(`💰 ${toPersianDigits(formatNumberWithCommas(amountClean))} تومان`);
+      if (note) lines.push(`📝 بابت: ${note}`);
+      return lines.join('\n');
+    }
+
+    async function copyFormattedFallback() {
+      const txt = buildFormattedTextOnly();
+      if (!txt) return;
+      await copyTextSafe(txt);
+      showToast('متن اطلاعات کپی شد ✅');
+    }
+
+    async function shareFormattedFallback() {
+      const txt = buildFormattedTextOnly();
+      if (!txt) return;
+      if (navigator.share) {
+        try { await navigator.share({ text: txt }); } catch (e) {}
+      } else {
+        await copyTextSafe(txt);
+        showToast('متن کپی شد ✅');
+      }
+    }
+
+    /* --- نمایش اطلاعات در بخش گیرنده و تاریخچه --- */
+    function renderActiveReceiverCard() {
+      const data = appState.activeRx;
+      if (!data || !data.c) return;
+      const bank = detectBank(data.c);
+
+      document.getElementById('rx-sent-time').textContent = data.t || 'ثبت نشده';
+      document.getElementById('rx-relative-time').textContent = getRelativeTimePersian(data.iso);
+
+      const visualCard = document.getElementById('rx-bank-visual-card');
+      visualCard.className = `keep-white rounded-2xl p-5 bg-gradient-to-br ${bank.color} border border-white/20 shadow-2xl mb-4`;
+
+      document.getElementById('rx-bank-dot').className = `w-3.5 h-3.5 rounded-full ${bank.dot}`;
+      document.getElementById('rx-bank-name').textContent = data.b || bank.name;
+      document.getElementById('rx-card-number').textContent = toPersianDigits(formatCardSpaced(data.c));
+      document.getElementById('rx-owner-name').textContent = data.o || '---';
+
+      const noteWrapper = document.getElementById('rx-note-wrapper');
+      if (data.n) {
+        noteWrapper.classList.remove('hidden');
+        document.getElementById('rx-note-text').textContent = data.n;
+      } else {
+        noteWrapper.classList.add('hidden');
+      }
+
+      const amountToman = parseInt(toEnglishDigits(data.a || '0').replace(/\D/g, ''), 10) || 0;
+      document.getElementById('rx-amount-toman').textContent = amountToman > 0 ? toPersianDigits(formatNumberWithCommas(amountToman.toString())) : 'مبلغ آزاد';
+      document.getElementById('rx-amount-rial').textContent = amountToman > 0 ? toPersianDigits(formatNumberWithCommas((amountToman * 10).toString())) : '۰';
+      document.getElementById('rx-amount-words').textContent = amountToman > 0 ? numberToPersianWords(amountToman.toString()) : 'بدون مبلغ مشخص';
+    }
+
+    async function copyReceiverCardNumber() {
+      if (!appState.activeRx || !appState.activeRx.c) return;
+      await copyTextSafe(toEnglishDigits(appState.activeRx.c).replace(/\D/g, ''));
+      showToast('شماره کارت ۱۶ رقمی کپی شد ✅');
+    }
+
+    async function copyReceiverAmount(unit) {
+      if (!appState.activeRx || !appState.activeRx.a || parseInt(appState.activeRx.a, 10) <= 0) return;
+      const toman = parseInt(toEnglishDigits(appState.activeRx.a).replace(/\D/g, ''), 10);
+      const val = unit === 'rial' ? (toman * 10).toString() : toman.toString();
+      await copyTextSafe(val);
+      showToast(unit === 'rial' ? 'مبلغ به ریال کپی شد ✅' : 'مبلغ به تومان کپی شد ✅');
+    }
+
+    function renderHistory() {
+      const container = document.getElementById('history-list');
+      if (!appState.history || appState.history.length === 0) {
+        container.innerHTML = `<p class="text-center text-xs text-slate-500 py-4">هنوز ارسالی ثبت نشده است.</p>`;
+        return;
+      }
+      container.innerHTML = '';
+      appState.history.slice(0, 15).forEach(item => {
+        const isPaid = item.status === 'paid';
+        const amountStr = parseInt(item.a || '0', 10) > 0 ? `${toPersianDigits(formatNumberWithCommas(item.a))} تومان` : 'مبلغ آزاد';
+        const el = document.createElement('div');
+        el.className = 'p-3.5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 cursor-pointer transition';
+        el.onclick = () => {
+          if (appState.role === 'receiver') {
+            appState.activeRx = item;
+            saveState();
+            renderActiveReceiverCard();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+          } else {
+            const cardInput = document.getElementById('sender-card-number');
+            cardInput.value = formatCardNumber(item.c);
+            document.getElementById('sender-owner-name').value = item.o || '';
+            const amountInput = document.getElementById('sender-amount');
+            amountInput.value = item.a && parseInt(item.a, 10) > 0 ? formatNumberWithCommas(item.a) : '';
+            document.getElementById('sender-note').value = item.n || '';
+            handleSenderCardInput(cardInput);
+            handleAmountInput(amountInput);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            showToast('اطلاعات در فرم قرار گرفت', 'info');
+          }
+        };
+        el.innerHTML = `
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-xs font-extrabold text-white">${item.o} (${item.b})</span>
+            <span class="text-[11px] font-bold px-2 py-0.5 rounded-full ${isPaid ? 'bg-emerald-500/20 text-emerald-300' : 'bg-amber-500/20 text-amber-300'}">${isPaid ? 'واریز شد ✅' : 'در انتظار'}</span>
+          </div>
+          <div class="flex justify-between text-xs mb-1">
+            <span class="ltr-num font-bold text-slate-300">${toPersianDigits(formatCardNumber(item.c))}</span>
+            <span class="font-black text-amber-300">${amountStr}</span>
+          </div>
+          <div class="text-[11px] text-slate-400">🕒 ${item.t || ''}</div>
+        `;
+        container.appendChild(el);
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      applyTheme(localStorage.getItem(STORAGE_KEYS.THEME) || 'emerald', true);
+      renderView();
+      initSupabaseSync();
+    });
+  </script>
+</body>
+</html>
